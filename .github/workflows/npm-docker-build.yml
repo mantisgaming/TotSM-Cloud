@@ -43,6 +43,7 @@ jobs:
         overwrite: true
   build-docker:
     runs-on: ubuntu-latest
+    needs: ["build-node"]
 
     steps:
     - name: Download artifact
