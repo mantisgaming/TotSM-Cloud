@@ -45,9 +45,11 @@ jobs:
         if-no-files-found: warn
         retention-days: 1
         overwrite: true
+        
   build-docker:
     runs-on: ubuntu-latest
     needs: ["build-node"]
+    environment: production
 
     steps:
     - name: Download artifact
@@ -60,7 +62,7 @@ jobs:
 
     - name: Build and Push Image
       run: |
-        echo "$CI_REGISTRY_PASSWORD" | docker login $CI_REGISTRY -u $CI_REGISTRY_USER --password-stdin
+        echo "${{vars.CI_REGISTRY_PASSWORD}}" | docker login ${{vars.CI_REGISTRY}} -u ${{vars.CI_REGISTRY_USER}} --password-stdin
         docker build -t $IMAGE_TAG .
         docker push $IMAGE_TAG
     
