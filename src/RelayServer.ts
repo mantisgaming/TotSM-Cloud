@@ -41,10 +41,9 @@ export class RelayServer {
         var removals: string[] = [];
 
         this.relays.forEach((relay, code) => {
-            if (relay.hasTimedOut()) {
-                relay.close(3000);
+            relay.cleanup();
+            if (relay.isClosed())
                 removals.push(code);
-            }
         });
 
         removals.forEach((code) => {
@@ -60,6 +59,8 @@ export class RelayServer {
         } while (this.relays.has(code));
 
         this.relays.set(code, new Relay(ws, code));
+        
+        this.cleanup();
     }
 
     private onJoin(ws: WebSocket, code: string): void {
@@ -67,6 +68,11 @@ export class RelayServer {
             ws.close(404);
         }
 
-        this.relays.get(code)?.connect(ws);
+        var relay: Relay = this.relays.get(code) as Relay;
+
+        if (relay.isOpen())
+            relay.connect(ws);
+        
+        this.cleanup();
     }
 }
