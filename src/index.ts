@@ -2,4 +2,4 @@ import { RelayServer } from "./RelayServer";
 
 const server: RelayServer = new RelayServer();
 
-server.listen(8080);
+server.listen(parseInt(process.env.NODE_PORT ?? "8080"));
