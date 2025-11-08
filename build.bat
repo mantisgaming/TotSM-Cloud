@@ -1,0 +1,1 @@
+docker build . totsm-cloud:latest

@@ -42,7 +42,7 @@
     "skipLibCheck": true,
   },
   "exclude": [
-    "**/__tests__/**/*.?([mc])[jt]s?(x)",
+    "**/__tests__/**",
     "**/?(*.)+(spec|test).?([mc])[jt]s?(x)",
     "**/*.config.ts"
   ]

@@ -1,0 +1,53 @@
+stages:          # List of stages for jobs, and their order of execution
+  - build
+  - test
+  - deploy
+
+variables:
+  IMAGE_TAG: $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG
+
+build-node:
+  image: node:lts
+  stage: build
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+  artifacts:
+    paths:
+      - public
+    expire_in: 1 week
+  script:
+    - npm i -D
+    - npm run build:production
+    - cp build/index.html build/404.html
+    - mv ./build/* public
+    - export
+
+build-image:
+  image: docker:latest
+  stage: build
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+  needs:
+    - build-node
+  services:
+    - name: docker:dind
+      variables:
+        HEALTHCHECK_TCP_PORT: "2376"
+  before_script:
+    - docker info
+  script:
+    - echo "$CI_REGISTRY_PASSWORD" | docker login $CI_REGISTRY -u $CI_REGISTRY_USER --password-stdin
+    - docker build -t $IMAGE_TAG .
+    - docker push $IMAGE_TAG
+
+test-image:
+  image: node:lts
+  stage: test
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+  needs:
+    - build-node
+  before_script:
+    - docker info
+  script:
+    - npm run test
