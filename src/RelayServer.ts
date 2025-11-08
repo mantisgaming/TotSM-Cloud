@@ -28,6 +28,10 @@ export class RelayServer {
 
         app.use(morgan("common"))
 
+        app.use(() => {
+            this.cleanup();
+        });
+
         app.ws(`${route}/create`, (ws) => {
             this.onCreate(ws);
         });
@@ -54,6 +58,9 @@ export class RelayServer {
         if (getCurrentTime() < this.lastCleanup + this.cleanupInterval)
             return;
 
+        this.lastCleanup = getCurrentTime();
+        console.log("Cleaning relays...");
+
         var removals: string[] = [];
 
         this.relays.forEach((relay, code) => {
@@ -63,8 +70,11 @@ export class RelayServer {
         });
 
         removals.forEach((code) => {
+            console.log(`Deleting entry: ${code}`);
             this.relays.delete(code);
         });
+
+        console.log("Cleaning complete");
     }
 
     private onCreate(ws: WebSocket): void {
@@ -75,20 +85,16 @@ export class RelayServer {
         } while (this.relays.has(code));
 
         this.relays.set(code, new Relay(ws, code));
-        
-        this.cleanup();
     }
 
     private onJoin(ws: WebSocket, code: string): void {
         if (!this.relays.has(code)) {
-            ws.close(404);
+            ws.close(1007);
         }
 
         var relay: Relay = this.relays.get(code) as Relay;
 
         if (relay.isOpen())
             relay.connect(ws);
-        
-        this.cleanup();
     }
 }

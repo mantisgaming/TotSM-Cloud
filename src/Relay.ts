@@ -28,7 +28,10 @@ export class Relay {
 
 		console.log(`Relay created with code ${this.code}`)
 
-		ws.on("close", this.onServerClose);
+		ws.on("ping", () => this.lastMessage = getCurrentTime());
+		ws.on("message", () => this.lastMessage = getCurrentTime());
+		
+		ws.on("close", this.onServerClose.bind(this));
 
 		// TODO: Add websocket callbacks for server
 	}
@@ -40,8 +43,10 @@ export class Relay {
 	public cleanup(): void {
 		if (this.hasTimedOut()) {
 			this.close(3008);
+			console.log(`Relay timed out: ${this.code}`);
 		} else if (this.server.readyState == global.WebSocket.CLOSED) {
-			this.close(1001)
+			this.close(1001);
+			console.log(`Relay disconnected: ${this.code}`);
 		}
 	}
 
