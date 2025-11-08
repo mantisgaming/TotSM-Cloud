@@ -22,19 +22,19 @@ export class RelayServer {
         this.lastCleanup = getCurrentTime();
         this.cleanupInterval = cleanupInterval;
         
+        if (route.endsWith("/")) {
+            route = route.substring(0, route.length - 2);
+        }
+
         app.use(morgan("common"))
 
-        var router = express.Router();
-
-        router.ws("/create", (ws) => {
+        app.ws(`${route}/create`, (ws) => {
             this.onCreate(ws);
         });
         
-        router.ws("/join/:gameID", (ws, req) => {
+        app.ws(`${route}/join/:gameID`, (ws, req) => {
             this.onJoin(ws, req.params.gameID as string);
         });
-
-        app.use(route, router);
 
         app.use((req, res) => {
             res.sendStatus(404);
