@@ -15,7 +15,7 @@ export class RelayServer {
 	private lastCleanup: number;
     private cleanupInterval: number;
 
-    constructor(codeLength: number = 4, cleanupInterval: number = 5) {
+    constructor(route: string = "/", codeLength: number = 4, cleanupInterval: number = 5) {
         var { app } = expressWs(express());
         this.app = app;
         this.codeGenerator = new CodeGenerator(codeLength);
@@ -24,13 +24,17 @@ export class RelayServer {
         
         app.use(morgan("common"))
 
-        app.ws("/create", (ws) => {
+        var router = express.Router();
+
+        router.ws("/create", (ws) => {
             this.onCreate(ws);
         });
         
-        app.ws("/join/:gameID", (ws, req) => {
+        router.ws("/join/:gameID", (ws, req) => {
             this.onJoin(ws, req.params.gameID as string);
         });
+
+        app.use(route, router);
 
         app.use((req, res) => {
             res.sendStatus(404);

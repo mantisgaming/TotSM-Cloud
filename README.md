@@ -11,6 +11,7 @@ Created by Max Allen
 |Variable|Description|
 |-|-|
 |`NODE_PORT`|The port on which the server will accept connections|
+|`ROOT_ROUTE`|The root path for the server address|
 
 ## Websocket Messages
 |Name|Type ID|Description|
