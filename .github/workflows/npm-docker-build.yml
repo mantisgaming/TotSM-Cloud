@@ -38,9 +38,9 @@ jobs:
           package-lock.json
           ./dist
           dockerfile
-        Available Options:
-          retention-days: 1
-          overwrite: true
+        if-no-files-found: warn
+        retention-days: 1
+        overwrite: true
   build-docker:
     runs-on: ubuntu-latest
 
