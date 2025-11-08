@@ -12,7 +12,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [18.x, 20.x, 22.x]
+        node-version: [22.x]
 
     steps:
     - name: Checkout repo
@@ -38,9 +38,9 @@ jobs:
           package-lock.json
           ./dist
           dockerfile
-        Available Options: error
-        retention-days: 1
-        overwrite: true
+        Available Options:
+          retention-days: 1
+          overwrite: true
   build-docker:
     runs-on: ubuntu-latest
 
