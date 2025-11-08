@@ -2,11 +2,10 @@ FROM node:latest
 
 WORKDIR /app
 
-COPY package.json package-lock.json tsconfig.json ./
-COPY src ./src
+COPY package-lock.json package.json ./
+RUN npm i
 
-RUN npm i -D
-RUN npm run build
+COPY ./dist ./dist
 
 ENV NODE_PORT=8080
 EXPOSE 8080

@@ -17,9 +17,7 @@ build-node:
     expire_in: 1 week
   script:
     - npm i -D
-    - npm run build:production
-    - cp build/index.html build/404.html
-    - mv ./build/* public
+    - npm run build
     - export
 
 build-image:
