@@ -28,7 +28,7 @@ export class CodeGenerator {
         var result: string = "";
         
         for (var i = 0; i < this.codeLength; i++) {
-            result += String.fromCharCode((val % 26) + 41);
+            result += String.fromCharCode((val % 26) + 65);
             val /= 26;
             val = Math.floor(val);
         }
