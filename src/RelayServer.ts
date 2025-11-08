@@ -29,6 +29,10 @@ export class RelayServer {
             this.onJoin(ws, req.params.gameID as string);
         });
 
+        app.use((req, res) => {
+            res.sendStatus(404);
+        })
+
         app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
             console.error(err.message);
             console.error(err.stack);
