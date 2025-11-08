@@ -88,6 +88,21 @@ export class RelayServer {
     }
 
     private onJoin(ws: WebSocket, code: string): void {
+
+        // Remove case sensitivity
+        code = code.toUpperCase();
+
+        if (code.length != this.codeGenerator.getCodeLength())
+
+        // Check for only letter characters
+        for (var i = 0; i < code.length; i++) {
+            if (code.charCodeAt(i) <= 64 || code.charCodeAt(i) >= 91) {
+                ws.close(1007);
+                return;
+            }
+        }
+
+        // Check that the server exists
         if (!this.relays.has(code)) {
             ws.close(1007);
         }

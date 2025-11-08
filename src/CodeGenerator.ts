@@ -18,10 +18,14 @@ export class CodeGenerator {
         return Number(generatePrimeSync(bitCount, { bigint: true }));
     }
 
-    generateCode(): string {
+    public generateCode(): string {
         this.currentCodeSeed += this.codeIncrementor;
         this.currentCodeSeed %= this.maximumCodeSeed;
         return this.convertNumberToCode(this.currentCodeSeed);
+    }
+
+    public getCodeLength(): number {
+        return this.codeLength;
     }
 
     private convertNumberToCode(val: number): string {
