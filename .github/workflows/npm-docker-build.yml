@@ -62,7 +62,7 @@ jobs:
 
     - name: Build and Push Image
       run: |
-        echo "${{vars.CI_REGISTRY_PASSWORD}}" | docker login ${{vars.CI_REGISTRY}} -u ${{vars.CI_REGISTRY_USER}} --password-stdin
+        echo "${{secrets.CI_REGISTRY_PASSWORD}}" | docker login ${{vars.CI_REGISTRY}} -u ${{vars.CI_REGISTRY_USER}} --password-stdin
         docker build -t $IMAGE_TAG .
         docker push $IMAGE_TAG
     
