@@ -1,6 +1,7 @@
 
 import express from "express";
 import expressWs from "express-ws";
+import morgan from "morgan";
 import { WebSocket } from "ws";
 import { Relay } from "./Relay";
 import { CodeGenerator } from "./CodeGenerator";
@@ -21,6 +22,8 @@ export class RelayServer {
         this.lastCleanup = getCurrentTime();
         this.cleanupInterval = cleanupInterval;
         
+        app.use(morgan("common"))
+
         app.ws("/create", (ws) => {
             this.onCreate(ws);
         });
