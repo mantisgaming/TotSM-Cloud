@@ -28,9 +28,7 @@ export class Relay {
 
 		console.log(`Relay created with code ${this.code}`)
 
-		ws.on("close", () => {
-			console.log(`Server hosting ${this.code} disconnected`);
-		});
+		ws.on("close", this.onServerClose);
 
 		// TODO: Add websocket callbacks for server
 	}
@@ -42,7 +40,7 @@ export class Relay {
 	public cleanup(): void {
 		if (this.hasTimedOut()) {
 			this.close(3008);
-		} else if (this.server.readyState == WebSocket.CLOSED) {
+		} else if (this.server.readyState == global.WebSocket.CLOSED) {
 			this.close(1001)
 		}
 	}
@@ -52,11 +50,11 @@ export class Relay {
 	}
 
 	public isClosed(): boolean {
-		return this.server.readyState == WebSocket.CLOSED;
+		return this.server.readyState == global.WebSocket.CLOSED;
 	}
 
 	public isOpen(): boolean {
-		return this.server.readyState == WebSocket.OPEN;
+		return this.server.readyState == global.WebSocket.OPEN;
 	}
 
 	public close(code?: number): void {
@@ -67,8 +65,13 @@ export class Relay {
 	}
 
 	public async connect(ws: WebSocket): Promise<void> {
+		console.log(`Client connection attempted for ${this.code}`);
 		// TODO: Request id from server
 		// TODO: Add to client list
 		// TODO: Add websocket callbacks for client
+	}
+
+	private onServerClose(code: number, reason: Buffer) {
+		console.log(`Server hosting ${this.code} disconnected`);
 	}
 }

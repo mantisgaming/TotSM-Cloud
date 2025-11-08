@@ -28,6 +28,11 @@ export class RelayServer {
         app.ws("/join/:gameID", (ws, req) => {
             this.onJoin(ws, req.params.gameID as string);
         });
+
+        app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
+            console.error(err.message);
+            console.error(err.stack);
+        });
     }
 
     listen(port: number): void {
