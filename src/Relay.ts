@@ -1,30 +1,21 @@
 import { WebSocket } from "ws";
 import { getCurrentTime } from "./util";
 
-enum Message {
-	UNDEFINED = -1,
-	DEBUG,
-	ERROR,
-	DATA,
-	CONNECT,
-	DISCONNECT,
-	SERVER_CODE,
-	ASSIGN_ID
-}
-
 export class Relay {
 	private server: WebSocket;
     private code: string;
 	private ttl: number;
 	private lastMessage: number;
+	private replyTimeout: number;
 
 	private clients: Map<number, WebSocket> = new Map<number, WebSocket>();
 
-	constructor (ws: WebSocket, code: string, ttl: number = 60) {
+	constructor (ws: WebSocket, code: string, replyTimeout: number = 5000, ttl: number = 60) {
 		this.server = ws;
 		this.code = code;
 		this.ttl = ttl;
 		this.lastMessage = getCurrentTime();
+		this.replyTimeout = replyTimeout;
 
 		console.log(`Relay created with code ${this.code}`)
 
@@ -32,6 +23,7 @@ export class Relay {
 		ws.on("message", () => this.lastMessage = getCurrentTime());
 		
 		ws.on("close", this.onServerClose.bind(this));
+		ws.on("message", this.onServerMessage.bind(this));
 
 		// TODO: Add websocket callbacks for server
 	}
@@ -71,12 +63,49 @@ export class Relay {
 
 	public async connect(ws: WebSocket): Promise<void> {
 		console.log(`Client connection attempted for ${this.code}`);
-		// TODO: Request id from server
-		// TODO: Add to client list
-		// TODO: Add websocket callbacks for client
+
+		var ID: number;
+
+		try {
+			ID = await this.RequestID();
+		} catch {
+			console.log(`Client connection failed for ${this.code}. ID not received.`);
+			ws.close();
+			return;
+		}
+
+		this.clients.set(ID, ws);
+		// TODO: Tell server the client has connected
+
+		ws.on("ping", () => this.lastMessage = getCurrentTime());
+		ws.on("message", () => this.lastMessage = getCurrentTime());
+		
+		ws.on("close", () => this.onClientClose(ID).bind(this));
+		ws.on("message", () => this.onClientMessage(ID).bind(this));
 	}
 
-	private onServerClose(code: number, reason: Buffer) {
+	private async RequestID(): Promise<number> {
+		throw new Error("Not implemented");
+	}
+
+	private onServerClose(): void {
 		console.log(`Server hosting ${this.code} disconnected`);
+	}
+
+	private onServerMessage(ws: WebSocket, data: Buffer | ArrayBuffer | Buffer[], isBinary: boolean) {
+		
+	}
+
+	private onClientClose(ID: number): (ws: WebSocket, code: number, reason: Buffer) => void {
+		console.log(`Client ${ID} disconnected from ${this.code}`);
+		return (ws: WebSocket, code: number, reason: Buffer) => {
+
+		};
+	}
+
+	private onClientMessage(ID: number): (ws: WebSocket, data: Buffer | ArrayBuffer | Buffer[], isBinary: boolean) => void {
+		return (ws: WebSocket, data: Buffer | ArrayBuffer | Buffer[], isBinary: boolean) => {
+
+		};
 	}
 }
