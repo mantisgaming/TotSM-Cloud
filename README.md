@@ -103,12 +103,3 @@ Created by Max Allen
     |-|-|-|
     |0|uint8|Message type ID|
     |1-4|int32|New client ID|
-
-- #### Relay To Client
-
-    Assign the client's ID and accept connection
-
-    |Bytes|Datatype|Description|
-    |-|-|-|
-    |0|uint8|Message type ID|
-    |1-4|int32|New client ID|

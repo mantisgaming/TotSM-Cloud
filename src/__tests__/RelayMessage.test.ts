@@ -173,7 +173,7 @@ describe("Relay Message", () => {
         );
 
         expect(result.type).toBe(RelayMessage.Type.ID);
-        result = result as RelayMessage.SendID | RelayMessage.AssignID;
+        result = result as RelayMessage.SendID | RelayMessage.SendID;
 
         expect(result.id).toBeUndefined();
         expect(result.direction).toBe(RelayMessage.Direction.RELAY_TO_SERVER);
@@ -204,7 +204,7 @@ describe("Relay Message", () => {
         );
 
         expect(result.type).toBe(RelayMessage.Type.ID);
-        result = result as RelayMessage.SendID | RelayMessage.AssignID;
+        result = result as RelayMessage.SendID | RelayMessage.SendID;
 
         expect(result.id).toBe(128);
         expect(result.direction).toBe(RelayMessage.Direction.SERVER_TO_RELAY);

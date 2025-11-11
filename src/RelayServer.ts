@@ -23,6 +23,8 @@ export class RelayServer {
         this.lastCleanup = getCurrentTime();
         this.cleanupInterval = cleanupInterval;
         this.replyTimeout = replyTimeout;
+
+        console.log(`Creating relay server at path "${route}"`)
         
         if (route.endsWith("/")) {
             route = route.substring(0, route.length - 2);
@@ -30,8 +32,9 @@ export class RelayServer {
 
         app.use(morgan("common"))
 
-        app.use(() => {
+        app.use((req, res, next) => {
             this.cleanup();
+            next();
         });
 
         app.ws(`${route}/create`, (ws) => {
@@ -54,6 +57,7 @@ export class RelayServer {
 
     listen(port: number): void {
         this.app.listen(port);
+        console.log(`Relay server listening on port ${port}`)
     }
 
     cleanup(): void {
@@ -72,7 +76,7 @@ export class RelayServer {
         });
 
         removals.forEach((code) => {
-            console.log(`Deleting entry: ${code}`);
+            console.log(`Deleting entry: "${code}"`);
             this.relays.delete(code);
         });
 

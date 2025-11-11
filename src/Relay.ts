@@ -45,12 +45,12 @@ export class Relay {
 	}
 
 	public cleanup(): void {
-		if (this.hasTimedOut()) {
-			this.close(3008);
-			console.log(`Relay "${this.code}": timed out`);
-		} else if (this.server.readyState == global.WebSocket.CLOSED) {
+		if (this.server.readyState == global.WebSocket.CLOSED) {
 			this.close();
 			console.log(`Relay "${this.code}": disconnected`);
+		} else if (this.hasTimedOut()) {
+			this.close(3008);
+			console.log(`Relay "${this.code}": timed out`);
 		}
 	}
 

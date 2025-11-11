@@ -48,12 +48,6 @@ export namespace RelayMessage {
         id: number
     }
 
-    export type AssignID = {
-        type: Type.ID,
-        direction: Direction.RELAY_TO_CLIENT,
-        id: number
-    }
-
     export type InformConnect = {
         type: Type.CONNECT,
         direction: RELAY_TO_ANY,
@@ -133,7 +127,7 @@ export namespace RelayMessage {
                 return undef;
                 
             case Type.ID:
-                if (direction == Direction.CLIENT_TO_RELAY)
+                if (direction == Direction.CLIENT_TO_RELAY || direction == Direction.RELAY_TO_CLIENT)
                     return undef;
 
                 if (direction == Direction.RELAY_TO_SERVER)
@@ -224,7 +218,6 @@ export type RelayMessage =
     RelayMessage.SendCode |
     RelayMessage.RequestID |
     RelayMessage.SendID |
-    RelayMessage.AssignID |
     RelayMessage.InformConnect |
     RelayMessage.SendData |
     RelayMessage.KickClient |
