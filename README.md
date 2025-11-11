@@ -16,27 +16,100 @@ Created by Max Allen
 ## Websocket Messages
 |Name|Type ID|Description|
 |-|-|-|
-|[UNDEFINED](#undefined)|-1|No functionality|
-|[DEBUG](#debug)|0|Send a debug message|
-|[ERROR](#error)|1|Send an error message|
-|[DATA](#data)|2|Send a Godot data packet|
-|[CONNECT](#connect)|3|Signal that a client has connected|
-|[DISCONNECT](#disconnect)|4|Request or signal a client disconnect|
-|[SERVER_CODE](#server_code)|5|Request or send the server code|
-|[ASSIGN_ID](#assign_id)|6|Request or send a new client ID|
-
-### UNDEFINED
-
-### DEBUG
-
-### ERROR
+|[DATA](#data)|0|Send a Godot data packet|
+|[CONNECT](#connect)|1|Signal that a client has connected|
+|[DISCONNECT](#disconnect)|2|Request or signal a client disconnect|
+|[CODE](#server_code)|3|Request or send the server code|
+|[ID](#ID)|4|Request or send a new client ID|
 
 ### DATA
 
+#### Server to Relay or Client to Relay
+
+Recieve data to relay to a connection
+
+|Bytes|Datatype|Description|
+|-|-|-|
+|0|uint8|Message type ID|
+|1-4|int32|Destination client ID|
+|5-n|blob|Data|
+
+#### Relay to Server or Relay to Client
+
+Data being sent to a connection
+
+|Bytes|Datatype|Description|
+|-|-|-|
+|0|uint8|Message type ID|
+|1-4|int32|Source client ID|
+|5-n|blob|Data|
+
 ### CONNECT
+
+#### Relay to Server or Relay to Client
+
+Inform a connection that another client has connected
+
+|Bytes|Datatype|Description|
+|-|-|-|
+|0|uint8|Message type ID|
+|1-4|int32|New client ID|
 
 ### DISCONNECT
 
-### SERVER_CODE
+#### Relay to Server or Relay to Client
 
-### ASSIGN_ID
+Inform a connection that another client has disconnected
+
+|Bytes|Datatype|Description|
+|-|-|-|
+|0|uint8|Message type ID|
+|1-4|int32|Dropped client ID|
+
+#### Server to Relay
+
+Forcefully disconnect a client
+
+|Bytes|Datatype|Description|
+|-|-|-|
+|0|uint8|Message type ID|
+|1-4|int32|Dropped client ID|
+
+### CODE
+
+#### Relay to Server
+
+Send the server connection code and accept connection
+
+|Bytes|Datatype|Description|
+|-|-|-|
+|0|uint8|Message type ID|
+|1-n|string|Server code|
+
+### ID
+
+#### Relay To Server
+
+Request a new client ID
+
+|Bytes|Datatype|Description|
+|-|-|-|
+|0|uint8|Message type ID|
+
+#### Server To Relay
+
+Provide a new client ID
+
+|Bytes|Datatype|Description|
+|-|-|-|
+|0|uint8|Message type ID|
+|1-4|int32|New client ID|
+
+#### Relay To Client
+
+Assign the client's ID and accept connection
+
+|Bytes|Datatype|Description|
+|-|-|-|
+|0|uint8|Message type ID|
+|1-4|int32|New client ID|
