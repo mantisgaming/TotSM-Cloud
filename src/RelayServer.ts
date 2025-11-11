@@ -14,13 +14,17 @@ export class RelayServer {
     private codeGenerator: CodeGenerator;
 	private lastCleanup: number;
     private cleanupInterval: number;
+    private replyTimeout: number;
 
-    constructor(route: string = "/", codeLength: number = 4, cleanupInterval: number = 5) {
+    constructor(route: string = "/", codeLength: number = 4, cleanupInterval: number = 5, replyTimeout: number = 5000) {
         var { app } = expressWs(express());
         this.app = app;
         this.codeGenerator = new CodeGenerator(codeLength);
         this.lastCleanup = getCurrentTime();
         this.cleanupInterval = cleanupInterval;
+        this.replyTimeout = replyTimeout;
+
+        console.log(`Creating relay server at path "${route}"`)
         
         if (route.endsWith("/")) {
             route = route.substring(0, route.length - 2);
@@ -28,8 +32,9 @@ export class RelayServer {
 
         app.use(morgan("common"))
 
-        app.use(() => {
+        app.use((req, res, next) => {
             this.cleanup();
+            next();
         });
 
         app.ws(`${route}/create`, (ws) => {
@@ -52,6 +57,7 @@ export class RelayServer {
 
     listen(port: number): void {
         this.app.listen(port);
+        console.log(`Relay server listening on port ${port}`)
     }
 
     cleanup(): void {
@@ -70,7 +76,7 @@ export class RelayServer {
         });
 
         removals.forEach((code) => {
-            console.log(`Deleting entry: ${code}`);
+            console.log(`Deleting entry: "${code}"`);
             this.relays.delete(code);
         });
 
@@ -84,7 +90,7 @@ export class RelayServer {
             code = this.codeGenerator.generateCode();
         } while (this.relays.has(code));
 
-        this.relays.set(code, new Relay(ws, code));
+        this.relays.set(code, new Relay(ws, code, this.replyTimeout));
     }
 
     private onJoin(ws: WebSocket, code: string): void {
@@ -105,6 +111,8 @@ export class RelayServer {
         // Check that the server exists
         if (!this.relays.has(code)) {
             ws.close(1007);
+            console.log(`Clien: Attempted to connect to invalid relay "${code}"`)
+            return;
         }
 
         var relay: Relay = this.relays.get(code) as Relay;
