@@ -8,15 +8,17 @@ export class Relay {
 	private lastMessage: number;
 	private replyTimeout: number;
 
-	private clients: Map<number, WebSocket> = new Map<number, WebSocket>();
+	private clientQueue: WebSocket[] = [];
+
+	private peers: Map<number, WebSocket> = new Map<number, WebSocket>();
 
 	
 	private get server(): WebSocket {
-		return this.clients.get(1) as WebSocket;
+		return this.peers.get(1) as WebSocket;
 	};
 
 	constructor (ws: WebSocket, code: string, replyTimeout: number = 5000, ttl: number = 60) {
-		this.clients.set(1, ws);
+		this.peers.set(1, ws);
 		this.code = code;
 		this.ttl = ttl;
 		this.lastMessage = getCurrentTime();
@@ -26,18 +28,16 @@ export class Relay {
 
 		ws.on("ping", () => this.lastMessage = getCurrentTime());
 		ws.on("message", () => this.lastMessage = getCurrentTime());
+		
 		ws.on("error", this.onServerError.bind(this));
+		ws.on("close", this.onServerClose.bind(this));
+		ws.on("message", this.onServerMessage.bind(this));
 
 		ws.send(RelayMessage.serialize({
 			type: RelayMessage.Type.CODE,
 			direction: RelayMessage.Direction.RELAY_TO_SERVER,
 			code: this.code
 		}));
-		
-		ws.on("close", this.onServerClose.bind(this));
-		ws.on("message", this.onServerMessage.bind(this));
-
-		// TODO: Add websocket callbacks for server
 	}
 
 	public getCode(): string {
@@ -68,33 +68,25 @@ export class Relay {
 
 	public close(code?: number): void {
 		this.server.close(code);
-		this.clients.forEach((client) => {
+		this.peers.forEach((client) => {
 			client.close(code);
 		});
 	}
 
-	public async connect(ws: WebSocket): Promise<void> {
+	public connect(ws: WebSocket): void {
 		console.log(`Client: Attempting to connect to relay "${this.code}"`);
 
-		// var ID: number;
+		this.clientQueue.push(ws);
 
-		// try {
-		// 	ID = await this.RequestID();
-		// } catch {
-		// 	console.log(`Client connection failed for server "${this.code}". ID not received.`);
-		// 	ws.close();
-		// 	return;
-		// }
+		var message: RelayMessage.RequestID = {
+			direction: RelayMessage.Direction.RELAY_TO_SERVER,
+			type: RelayMessage.Type.ID
+		};
 
-		// this.clients.set(ID, ws);
-		// // TODO: Tell server the client has connected
+		this.server.send(RelayMessage.serialize(message));
 
-		// ws.on("ping", () => this.lastMessage = getCurrentTime());
-		// ws.on("message", () => this.lastMessage = getCurrentTime());
-		
-		// ws.on("close", () => this.onClientClose(ID).bind(this));
-		// ws.on("message", () => this.onClientMessage(ID).bind(this));
-		// ws.on("error", () => this.onClientError(ID).bind(this));
+		ws.on("ping", () => this.lastMessage = getCurrentTime());
+		ws.on("message", () => this.lastMessage = getCurrentTime());
 	}
 
 	private onServerClose(): void {
@@ -102,24 +94,106 @@ export class Relay {
 		this.close();
 	}
 
-	private onServerMessage(ws: WebSocket, data: Buffer | ArrayBuffer | Buffer[], isBinary: boolean): void {
-		// TODO: Relay message to client
+	private onServerMessage(data: Buffer | ArrayBuffer | Buffer[], isBinary: boolean): void {
+		if (data == undefined)
+			return;
+		
+		var message = RelayMessage.deserialize(data as Uint8Array, RelayMessage.Direction.SERVER_TO_RELAY);
+
+		switch (message.type) {
+			case RelayMessage.Type.ID:
+				message = message as RelayMessage.SendID;
+				if (this.clientQueue.length > 0) {
+					let ws: WebSocket = this.clientQueue.pop() as WebSocket;
+					let ID: number = message.id;
+
+					// TODO: Refactor into new function
+					this.peers.set(ID, ws);
+		
+					ws.on("close", () => this.onClientClose(ID).bind(this));
+					ws.on("message", () => this.onClientMessage(ID).bind(this));
+					ws.on("error", () => this.onClientError(ID).bind(this));
+
+					let msg: RelayMessage.InformConnect = {
+						direction: RelayMessage.Direction.RELAY_TO_CLIENT,
+						type: RelayMessage.Type.CONNECT,
+						id: message.id
+					};
+					
+					let bytes = RelayMessage.serialize(msg);
+
+					// TODO: Only send 0 to client and numeber to server
+					this.peers.forEach((ws) => {
+						ws.send(bytes);
+					});
+
+					console.log(`Relay ${this.code}: Client ${message.id} joined`);
+				}
+				break;
+
+			case RelayMessage.Type.DATA:
+				this.forwardDataTo(message, RelayMessage.Direction.RELAY_TO_CLIENT, 1);
+				break;
+
+			case RelayMessage.Type.DISCONNECT:
+				{
+					// TODO: Refactor into new function
+					let ws: WebSocket | undefined = this.peers.get(message.id);
+					
+					if (ws == undefined) {
+						console.warn(`Cannot kick client "${message.id}" from "${this.code}". They do not exist.`);
+						break;
+					}
+
+					ws.close(1001);
+					this.peers.delete(message.id);
+
+					let msg: RelayMessage.InformDisconnect = {
+						direction: RelayMessage.Direction.RELAY_TO_CLIENT,
+						type: RelayMessage.Type.DISCONNECT,
+						id: message.id
+					};
+
+					let bytes = RelayMessage.serialize(msg);
+
+					this.peers.forEach((ws) => {
+						ws.send(bytes);
+					});
+				}
+				break;
+			
+			case RelayMessage.Type.PING:
+				break;
+
+			default:
+				console.warn(`Unexpected message type from server: ${(data as Uint8Array)[0]}`)
+		}
 	}
 
-	private onServerError(ws: WebSocket, error: Error): void {
+	private onServerError(error: Error): void {
 		console.warn(`Server "${this.code}" web socket error: ${error.message}\nStack: ${error.stack}`);
 	}
 
 	private onClientClose(ID: number): (ws: WebSocket, code: number, reason: Buffer) => void {
-		console.log(`Client ${ID} disconnected from ${this.code}`);
 		return (ws: WebSocket, code: number, reason: Buffer) => {
+			console.log(`Client ${ID} disconnected from ${this.code}`);
 			// TODO: Remove client from list and send disconnect messages
 		};
 	}
 
 	private onClientMessage(ID: number): (ws: WebSocket, data: Buffer | ArrayBuffer | Buffer[], isBinary: boolean) => void {
 		return (ws: WebSocket, data: Buffer | ArrayBuffer | Buffer[], isBinary: boolean) => {
-			// TODO: Relay message to server
+			if (data == undefined)
+				return;
+			
+			var message = RelayMessage.deserialize(data as Uint8Array, RelayMessage.Direction.CLIENT_TO_RELAY);
+
+			if (message.type != RelayMessage.Type.DATA) {
+				console.warn(`Unexpected message type from client: ${message.type}`);
+				return;
+			}
+
+			this.forwardDataTo(message, RelayMessage.Direction.RELAY_TO_SERVER, ID);
 		};
 	}
 
@@ -127,5 +201,20 @@ export class Relay {
 		return (ws: WebSocket, error: Error) => {
 			console.warn(`Client "${ID}" on relay "${this.code}": Web socket error: ${error.message}\nStack: ${error.stack}`);
 		}
+	}
+
+	private forwardDataTo(message: RelayMessage.SendData, direction: RelayMessage.Direction, source: number): void {
+		message.direction = direction;
+		var destination: number = message.id;
+		message.id = source;
+
+		var ws = this.peers.get(destination);
+
+		if (ws == undefined) {
+			console.warn(`Relay "${this.code}": Invalid peer ID "${destination}"`);
+			return;
+		}
+
+		ws.send(RelayMessage.serialize(message));
 	}
 }

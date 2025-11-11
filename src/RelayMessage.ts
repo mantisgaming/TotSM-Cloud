@@ -7,6 +7,7 @@ export namespace RelayMessage {
         DISCONNECT,
         CODE,
         ID,
+        PING,
         
         MAXIMUM
     }
@@ -28,6 +29,11 @@ export namespace RelayMessage {
 
     export type Undefined = {
         type: Type.UNDEFINED,
+        direction: Direction
+    }
+
+    export type Ping = {
+        type: Type.PING,
         direction: Direction
     }
 
@@ -88,6 +94,12 @@ export namespace RelayMessage {
             messageType = data[0] as number;
         
         switch(messageType) {
+            case Type.PING:
+                return {
+                    type: messageType,
+                    direction: direction
+                };
+
             case Type.DATA:
                 return {
                     type: messageType,
@@ -194,20 +206,20 @@ export namespace RelayMessage {
         var n4 = data[3] as number;
 
         return (
-            (n1 << 24) |
-            (n2 << 16) |
-            (n3 << 8) |
-            (n4 << 0)
+            (n1 << 0) |
+            (n2 << 8) |
+            (n3 << 16) |
+            (n4 << 24)
         );
     }
 
     function encodeS32(data: number): Uint8Array {
         var result: Uint8Array = new Uint8Array(4);
 
-        result[0] = data >> 24 & 0xff;
-        result[1] = data >> 16 & 0xff;
-        result[2] = data >> 8 & 0xff;
-        result[3] = data >> 0 & 0xff;
+        result[0] = data >> 0 & 0xff;
+        result[1] = data >> 8 & 0xff;
+        result[2] = data >> 16 & 0xff;
+        result[3] = data >> 24 & 0xff;
 
         return result;
     }
@@ -215,6 +227,7 @@ export namespace RelayMessage {
 
 export type RelayMessage =
     RelayMessage.Undefined |
+    RelayMessage.Ping |
     RelayMessage.SendCode |
     RelayMessage.RequestID |
     RelayMessage.SendID |

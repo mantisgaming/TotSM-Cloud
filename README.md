@@ -21,6 +21,7 @@ Created by Max Allen
 |[DISCONNECT](#disconnect)|2|Request or signal a client disconnect|
 |[CODE](#server_code)|3|Request or send the server code|
 |[ID](#ID)|4|Request or send a new client ID|
+|[PING](#PING)|5|Heartbeat to keep connection alive|
 
 ### DATA
 
@@ -87,7 +88,7 @@ Created by Max Allen
 
 ### ID
 
-- #### Relay To Server
+- #### Relay to Server
 
     Request a new client ID
 
@@ -95,7 +96,7 @@ Created by Max Allen
     |-|-|-|
     |0|uint8|Message type ID|
 
-- #### Server To Relay
+- #### Server to Relay
 
     Provide a new client ID
 
@@ -103,3 +104,13 @@ Created by Max Allen
     |-|-|-|
     |0|uint8|Message type ID|
     |1-4|int32|New client ID|
+
+### PING
+
+- #### Server to Relay
+
+    Notifies the relay that the server is still running
+
+    |Bytes|Datatype|Description|
+    |-|-|-|
+    |0|uint8|Message type ID|

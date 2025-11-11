@@ -111,6 +111,7 @@ export class RelayServer {
         // Check that the server exists
         if (!this.relays.has(code)) {
             ws.close(1007);
+            return;
         }
 
         var relay: Relay = this.relays.get(code) as Relay;
