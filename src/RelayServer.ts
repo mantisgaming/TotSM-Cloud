@@ -24,7 +24,7 @@ export class RelayServer {
         this.cleanupInterval = cleanupInterval;
         this.replyTimeout = replyTimeout;
 
-        console.log(`Creating relay server at path "${route}"`)
+        console.log(`Server: Creating relay server at path "${route}"`)
         
         if (route.endsWith("/")) {
             route = route.substring(0, route.length - 2);
@@ -57,7 +57,7 @@ export class RelayServer {
 
     listen(port: number): void {
         this.app.listen(port);
-        console.log(`Relay server listening on port ${port}`)
+        console.log(`Server: Listening on port ${port}`)
     }
 
     cleanup(): void {
@@ -65,7 +65,7 @@ export class RelayServer {
             return;
 
         this.lastCleanup = getCurrentTime();
-        console.log("Cleaning relays...");
+        console.log("Server: Cleaning relays...");
 
         var removals: string[] = [];
 
@@ -76,11 +76,11 @@ export class RelayServer {
         });
 
         removals.forEach((code) => {
-            console.log(`Deleting entry: "${code}"`);
+            console.log(`Server: Deleting "${code}"`);
             this.relays.delete(code);
         });
 
-        console.log("Cleaning complete");
+        console.log("Server: Cleaning complete");
     }
 
     private onCreate(ws: WebSocket): void {
@@ -111,7 +111,7 @@ export class RelayServer {
         // Check that the server exists
         if (!this.relays.has(code)) {
             ws.close(1007);
-            console.log(`Clien: Attempted to connect to invalid relay "${code}"`)
+            console.log(`Server: Client attempted to connect to invalid relay "${code}"`)
             return;
         }
 

@@ -74,7 +74,7 @@ export class Relay {
 	}
 
 	public connect(ws: WebSocket): void {
-		console.log(`Client: Attempting to connect to relay "${this.code}"`);
+		console.log(`Relay "${this.code}": Client connecting to relay`);
 
 		this.clientQueue.push(ws);
 
@@ -127,7 +127,7 @@ export class Relay {
 				break;
 
 			default:
-				console.warn(`Unexpected message type from server: ${(data as Uint8Array)[0]}`)
+				console.warn(`Relay "${this.code}": Unexpected message type from server: ${(data as Uint8Array)[0]}`)
 		}
 	}
 
@@ -164,7 +164,7 @@ export class Relay {
 		let ws: WebSocket | undefined = this.peers.get(ID);
 		
 		if (ws == undefined) {
-			console.warn(`Cannot kick client "${ID}" from "${this.code}". They do not exist.`);
+			console.warn(`Relay "${this.code}": Cannot kick client "${ID}" They do not exist.`);
 			return;
 		}
 
@@ -185,12 +185,12 @@ export class Relay {
 	}
 
 	private onServerError(error: Error): void {
-		console.warn(`Server "${this.code}" web socket error: ${error.message}\nStack: ${error.stack}`);
+		console.warn(`Relay "${this.code}": Server web socket error: ${error.message}\nStack: ${error.stack}`);
 	}
 
 	private onClientClose(ID: number): (wcode: number, reason: Buffer) => void {
 		return (code: number, reason: Buffer) => {
-			console.log(`Client "${ID}" disconnected from "${this.code}"`);
+			console.log(`Relay "${this.code}": Client "${ID}" disconnected`);
 			
 			let msg: RelayMessage.InformDisconnect = {
 				direction: RelayMessage.Direction.RELAY_TO_CLIENT,
@@ -212,7 +212,7 @@ export class Relay {
 			var message = RelayMessage.deserialize(data as Uint8Array, RelayMessage.Direction.CLIENT_TO_RELAY);
 
 			if (message.type != RelayMessage.Type.DATA) {
-				console.warn(`Unexpected message type from client: ${message.type}`);
+				console.warn(`Relay "${this.code}": Unexpected message type from client: ${(data as Uint8Array)[0]}`);
 				return;
 			}
 
@@ -222,7 +222,7 @@ export class Relay {
 
 	private onClientError(ID: number): (error: Error) => void {
 		return (error: Error) => {
-			console.warn(`Client "${ID}" on relay "${this.code}": Web socket error: ${error.message}\nStack: ${error.stack}`);
+			console.warn(`Relay "${this.code}": Client "${ID}" web socket error: ${error.message}\nStack: ${error.stack}`);
 		}
 	}
 
@@ -234,7 +234,7 @@ export class Relay {
 		var ws = this.peers.get(destination);
 
 		if (ws == undefined) {
-			console.warn(`Relay "${this.code}": Invalid peer ID "${destination}"`);
+			console.warn(`Relay "${this.code}": Cannot send data to invalid peer ID "${destination}"`);
 			return;
 		}
 
