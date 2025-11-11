@@ -107,27 +107,8 @@ export class Relay {
 					let ws: WebSocket = this.clientQueue.pop() as WebSocket;
 					let ID: number = message.id;
 
-					// TODO: Refactor into new function
-					this.peers.set(ID, ws);
-		
-					ws.on("close", () => this.onClientClose(ID).bind(this));
-					ws.on("message", () => this.onClientMessage(ID).bind(this));
-					ws.on("error", () => this.onClientError(ID).bind(this));
-
-					let msg: RelayMessage.InformConnect = {
-						direction: RelayMessage.Direction.RELAY_TO_CLIENT,
-						type: RelayMessage.Type.CONNECT,
-						id: message.id
-					};
-					
-					let bytes = RelayMessage.serialize(msg);
-
-					// TODO: Only send 0 to client and numeber to server
-					this.peers.forEach((ws) => {
-						ws.send(bytes);
-					});
-
-					console.log(`Relay ${this.code}: Client ${message.id} joined`);
+					this.finalizeClientConnection(ws, ID);
+					console.log(`Relay ${this.code}: Client ${ID} joined`);
 				}
 				break;
 
@@ -137,28 +118,8 @@ export class Relay {
 
 			case RelayMessage.Type.DISCONNECT:
 				{
-					// TODO: Refactor into new function
-					let ws: WebSocket | undefined = this.peers.get(message.id);
+					this.kickClient(message.id)
 					
-					if (ws == undefined) {
-						console.warn(`Cannot kick client "${message.id}" from "${this.code}". They do not exist.`);
-						break;
-					}
-
-					ws.close(1001);
-					this.peers.delete(message.id);
-
-					let msg: RelayMessage.InformDisconnect = {
-						direction: RelayMessage.Direction.RELAY_TO_CLIENT,
-						type: RelayMessage.Type.DISCONNECT,
-						id: message.id
-					};
-
-					let bytes = RelayMessage.serialize(msg);
-
-					this.peers.forEach((ws) => {
-						ws.send(bytes);
-					});
 				}
 				break;
 			
@@ -170,19 +131,73 @@ export class Relay {
 		}
 	}
 
+	private finalizeClientConnection(ws: WebSocket, ID: number): void {
+		this.peers.set(ID, ws);
+
+		ws.on("close", () => this.onClientClose(ID).bind(this));
+		ws.on("message", () => this.onClientMessage(ID).bind(this));
+		ws.on("error", () => this.onClientError(ID).bind(this));
+
+		let msg: RelayMessage.InformConnect = {
+			direction: RelayMessage.Direction.RELAY_TO_SERVER,
+			type: RelayMessage.Type.CONNECT,
+			id: ID
+		};
+		
+		this.server.send(RelayMessage.serialize(msg));
+		
+		msg.id = 1;
+
+		ws.send(RelayMessage.serialize(msg));
+	}
+
+	private kickClient(ID: number): void {
+		// TODO: Refactor into new function
+		let ws: WebSocket | undefined = this.peers.get(ID);
+		
+		if (ws == undefined) {
+			console.warn(`Cannot kick client "${ID}" from "${this.code}". They do not exist.`);
+			return;
+		}
+
+		ws.close(1001);
+		this.peers.delete(ID);
+
+		let msg: RelayMessage.InformDisconnect = {
+			direction: RelayMessage.Direction.RELAY_TO_CLIENT,
+			type: RelayMessage.Type.DISCONNECT,
+			id: ID
+		};
+
+		this.server.send(RelayMessage.serialize(msg))
+
+		msg.id = 1;
+
+		ws.send(RelayMessage.serialize(msg));
+	}
+
 	private onServerError(error: Error): void {
 		console.warn(`Server "${this.code}" web socket error: ${error.message}\nStack: ${error.stack}`);
 	}
 
-	private onClientClose(ID: number): (ws: WebSocket, code: number, reason: Buffer) => void {
-		return (ws: WebSocket, code: number, reason: Buffer) => {
+	private onClientClose(ID: number): (wcode: number, reason: Buffer) => void {
+		return (code: number, reason: Buffer) => {
 			console.log(`Client ${ID} disconnected from ${this.code}`);
-			// TODO: Remove client from list and send disconnect messages
+			
+			let msg: RelayMessage.InformDisconnect = {
+				direction: RelayMessage.Direction.RELAY_TO_CLIENT,
+				type: RelayMessage.Type.DISCONNECT,
+				id: ID
+			};
+
+			this.server.send(RelayMessage.serialize(msg));
+
+			this.peers.delete(ID);
 		};
 	}
 
-	private onClientMessage(ID: number): (ws: WebSocket, data: Buffer | ArrayBuffer | Buffer[], isBinary: boolean) => void {
-		return (ws: WebSocket, data: Buffer | ArrayBuffer | Buffer[], isBinary: boolean) => {
+	private onClientMessage(ID: number): (data: Buffer | ArrayBuffer | Buffer[], isBinary: boolean) => void {
+		return (data: Buffer | ArrayBuffer | Buffer[], isBinary: boolean) => {
 			if (data == undefined)
 				return;
 			
@@ -197,8 +212,8 @@ export class Relay {
 		};
 	}
 
-	private onClientError(ID: number): (ws: WebSocket, error: Error) => void {
-		return (ws: WebSocket, error: Error) => {
+	private onClientError(ID: number): (error: Error) => void {
+		return (error: Error) => {
 			console.warn(`Client "${ID}" on relay "${this.code}": Web socket error: ${error.message}\nStack: ${error.stack}`);
 		}
 	}
