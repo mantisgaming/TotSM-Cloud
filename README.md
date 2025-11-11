@@ -48,7 +48,7 @@ Created by Max Allen
 
 - #### Relay to Server or Relay to Client
 
-    Inform a connection that another client has connected
+    Inform a peer that they have connected
 
     |Bytes|Datatype|Description|
     |-|-|-|
@@ -99,6 +99,15 @@ Created by Max Allen
 - #### Server to Relay
 
     Provide a new client ID
+
+    |Bytes|Datatype|Description|
+    |-|-|-|
+    |0|uint8|Message type ID|
+    |1-4|int32|New client ID|
+
+- #### Relay To Client
+
+    Assign the client's ID
 
     |Bytes|Datatype|Description|
     |-|-|-|
