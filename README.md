@@ -24,92 +24,91 @@ Created by Max Allen
 
 ### DATA
 
-#### Server to Relay or Client to Relay
+- #### Server to Relay or Client to Relay
+    Recieve data to relay to a connection
 
-Recieve data to relay to a connection
+    |Bytes|Datatype|Description|
+    |-|-|-|
+    |0|uint8|Message type ID|
+    |1-4|int32|Destination client ID|
+    |5-n|blob|Data|
 
-|Bytes|Datatype|Description|
-|-|-|-|
-|0|uint8|Message type ID|
-|1-4|int32|Destination client ID|
-|5-n|blob|Data|
+- #### Relay to Server or Relay to Client
 
-#### Relay to Server or Relay to Client
+    Data being sent to a connection
 
-Data being sent to a connection
-
-|Bytes|Datatype|Description|
-|-|-|-|
-|0|uint8|Message type ID|
-|1-4|int32|Source client ID|
-|5-n|blob|Data|
+    |Bytes|Datatype|Description|
+    |-|-|-|
+    |0|uint8|Message type ID|
+    |1-4|int32|Source client ID|
+    |5-n|blob|Data|
 
 ### CONNECT
 
-#### Relay to Server or Relay to Client
+- #### Relay to Server or Relay to Client
 
-Inform a connection that another client has connected
+    Inform a connection that another client has connected
 
-|Bytes|Datatype|Description|
-|-|-|-|
-|0|uint8|Message type ID|
-|1-4|int32|New client ID|
+    |Bytes|Datatype|Description|
+    |-|-|-|
+    |0|uint8|Message type ID|
+    |1-4|int32|New client ID|
 
 ### DISCONNECT
 
-#### Relay to Server or Relay to Client
+- #### Relay to Server or Relay to Client
 
-Inform a connection that another client has disconnected
+    Inform a connection that another client has disconnected
 
-|Bytes|Datatype|Description|
-|-|-|-|
-|0|uint8|Message type ID|
-|1-4|int32|Dropped client ID|
+    |Bytes|Datatype|Description|
+    |-|-|-|
+    |0|uint8|Message type ID|
+    |1-4|int32|Dropped client ID|
 
-#### Server to Relay
+- #### Server to Relay
 
-Forcefully disconnect a client
+    Forcefully disconnect a client
 
-|Bytes|Datatype|Description|
-|-|-|-|
-|0|uint8|Message type ID|
-|1-4|int32|Dropped client ID|
+    |Bytes|Datatype|Description|
+    |-|-|-|
+    |0|uint8|Message type ID|
+    |1-4|int32|Dropped client ID|
 
 ### CODE
 
-#### Relay to Server
+- #### Relay to Server
 
-Send the server connection code and accept connection
+    Send the server connection code and accept connection
 
-|Bytes|Datatype|Description|
-|-|-|-|
-|0|uint8|Message type ID|
-|1-n|string|Server code|
+    |Bytes|Datatype|Description|
+    |-|-|-|
+    |0|uint8|Message type ID|
+    |1-n|string|Server code|
 
 ### ID
 
-#### Relay To Server
+- #### Relay To Server
 
-Request a new client ID
+    Request a new client ID
 
-|Bytes|Datatype|Description|
-|-|-|-|
-|0|uint8|Message type ID|
+    |Bytes|Datatype|Description|
+    |-|-|-|
+    |0|uint8|Message type ID|
 
-#### Server To Relay
+- #### Server To Relay
 
-Provide a new client ID
+    Provide a new client ID
 
-|Bytes|Datatype|Description|
-|-|-|-|
-|0|uint8|Message type ID|
-|1-4|int32|New client ID|
+    |Bytes|Datatype|Description|
+    |-|-|-|
+    |0|uint8|Message type ID|
+    |1-4|int32|New client ID|
 
-#### Relay To Client
+- #### Relay To Client
 
-Assign the client's ID and accept connection
+    Assign the client's ID and accept connection
 
-|Bytes|Datatype|Description|
-|-|-|-|
-|0|uint8|Message type ID|
-|1-4|int32|New client ID|
+    |Bytes|Datatype|Description|
+    |-|-|-|
+    |0|uint8|Message type ID|
+    |1-4|int32|New client ID|
