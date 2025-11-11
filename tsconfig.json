@@ -16,7 +16,7 @@
     // and npm install -D @types/node
 
     // Other Outputs
-    "sourceMap": false,
+    "sourceMap": true,
     "declaration": false,
     "declarationMap": false,
 

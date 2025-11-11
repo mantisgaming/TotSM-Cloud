@@ -34,7 +34,7 @@ export namespace RelayMessage {
     export type SendCode = {
         type: Type.CODE,
         direction: Direction.RELAY_TO_SERVER,
-        code: String
+        code: string
     }
 
     export type RequestID = {
@@ -73,7 +73,7 @@ export namespace RelayMessage {
         id: number
     }
 
-    export type InformClientDisconnect = {
+    export type InformDisconnect = {
         type: Type.DISCONNECT,
         direction: RELAY_TO_ANY,
         id: number
@@ -155,6 +155,41 @@ export namespace RelayMessage {
         };
     }
 
+    export function serialize(data: RelayMessage): Uint8Array {
+        var result: number[] = [];
+
+        if (data.type == Type.UNDEFINED)
+            throw Error("Refusal to serialize undefined message");
+
+        result.push(data.type.valueOf());
+
+        switch (data.type) {
+            case Type.DATA:
+                result.push(...encodeS32(data.id));
+                result.push(...data.data);
+                break;
+
+            case Type.CONNECT:
+                result.push(...encodeS32(data.id));
+                break;
+
+            case Type.DISCONNECT:
+                result.push(...encodeS32(data.id));
+                break;
+
+            case Type.CODE:
+                result.push(...new TextEncoder().encode(data.code))
+                break;
+
+            case Type.ID:
+                if (data.direction != Direction.RELAY_TO_SERVER)
+                    result.push(...encodeS32(data.id));
+                break;
+        }
+
+        return new Uint8Array(result);
+    }
+
     function parseS32(data: Uint8Array): number {
         if (data.length < 4)
             throw Error("Cannot parse int 32 from less than 4 bytes");
@@ -164,11 +199,21 @@ export namespace RelayMessage {
         var n3 = data[2] as number;
         var n4 = data[3] as number;
 
-        return n1 << 24 + n2 << 16 + n3 << 8 + n4;
+        return (
+            (n1 << 24) |
+            (n2 << 16) |
+            (n3 << 8) |
+            (n4 << 0)
+        );
     }
 
-    export function serialize(data: RelayMessage): Uint8Array {
-        var result = new Uint8Array();
+    function encodeS32(data: number): Uint8Array {
+        var result: Uint8Array = new Uint8Array(4);
+
+        result[0] = data >> 24 & 0xff;
+        result[1] = data >> 16 & 0xff;
+        result[2] = data >> 8 & 0xff;
+        result[3] = data >> 0 & 0xff;
 
         return result;
     }
@@ -183,4 +228,4 @@ export type RelayMessage =
     RelayMessage.InformConnect |
     RelayMessage.SendData |
     RelayMessage.KickClient |
-    RelayMessage.InformClientDisconnect;
+    RelayMessage.InformDisconnect;
