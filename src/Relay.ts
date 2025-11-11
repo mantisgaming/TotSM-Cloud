@@ -108,7 +108,7 @@ export class Relay {
 					let ID: number = message.id;
 
 					this.finalizeClientConnection(ws, ID);
-					console.log(`Relay ${this.code}: Client ${ID} joined`);
+					console.log(`Relay "${this.code}": Client "${ID}" joined`);
 				}
 				break;
 
@@ -134,11 +134,19 @@ export class Relay {
 	private finalizeClientConnection(ws: WebSocket, ID: number): void {
 		this.peers.set(ID, ws);
 
-		ws.on("close", () => this.onClientClose(ID).bind(this));
-		ws.on("message", () => this.onClientMessage(ID).bind(this));
-		ws.on("error", () => this.onClientError(ID).bind(this));
+		ws.on("close", this.onClientClose(ID).bind(this));
+		ws.on("message", this.onClientMessage(ID).bind(this));
+		ws.on("error", this.onClientError(ID).bind(this));
 
-		let msg: RelayMessage.InformConnect = {
+		let msg: RelayMessage.InformConnect | RelayMessage.AssignID = {
+			direction: RelayMessage.Direction.RELAY_TO_CLIENT,
+			type: RelayMessage.Type.ID,
+			id: ID
+		}
+		
+		ws.send(RelayMessage.serialize(msg));
+		
+		msg = {
 			direction: RelayMessage.Direction.RELAY_TO_SERVER,
 			type: RelayMessage.Type.CONNECT,
 			id: ID
@@ -182,7 +190,7 @@ export class Relay {
 
 	private onClientClose(ID: number): (wcode: number, reason: Buffer) => void {
 		return (code: number, reason: Buffer) => {
-			console.log(`Client ${ID} disconnected from ${this.code}`);
+			console.log(`Client "${ID}" disconnected from "${this.code}"`);
 			
 			let msg: RelayMessage.InformDisconnect = {
 				direction: RelayMessage.Direction.RELAY_TO_CLIENT,

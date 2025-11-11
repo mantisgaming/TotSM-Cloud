@@ -111,6 +111,7 @@ export class RelayServer {
         // Check that the server exists
         if (!this.relays.has(code)) {
             ws.close(1007);
+            console.log(`Clien: Attempted to connect to invalid relay "${code}"`)
             return;
         }
 
