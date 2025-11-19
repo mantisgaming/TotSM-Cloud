@@ -3,7 +3,7 @@ import { getCurrentTime } from "./util";
 import { RelayMessage } from "./RelayMessage";
 
 export class Relay {
-    private code: string;
+	private code: string;
 	private ttl: number;
 	private lastMessage: number;
 	private replyTimeout: number;
@@ -12,12 +12,12 @@ export class Relay {
 
 	private peers: Map<number, WebSocket> = new Map<number, WebSocket>();
 
-	
+
 	private get server(): WebSocket {
 		return this.peers.get(1) as WebSocket;
 	};
 
-	constructor (ws: WebSocket, code: string, replyTimeout: number = 5000, ttl: number = 60) {
+	constructor(ws: WebSocket, code: string, replyTimeout: number = 5000, ttl: number = 60) {
 		this.peers.set(1, ws);
 		this.code = code;
 		this.ttl = ttl;
@@ -28,7 +28,7 @@ export class Relay {
 
 		ws.on("ping", () => this.lastMessage = getCurrentTime());
 		ws.on("message", () => this.lastMessage = getCurrentTime());
-		
+
 		ws.on("error", this.onServerError.bind(this));
 		ws.on("close", this.onServerClose.bind(this));
 		ws.on("message", this.onServerMessage.bind(this));
@@ -97,7 +97,7 @@ export class Relay {
 	private onServerMessage(data: Buffer | ArrayBuffer | Buffer[], isBinary: boolean): void {
 		if (data == undefined)
 			return;
-		
+
 		var message = RelayMessage.deserialize(data as Uint8Array, RelayMessage.Direction.SERVER_TO_RELAY);
 
 		switch (message.type) {
@@ -119,11 +119,12 @@ export class Relay {
 			case RelayMessage.Type.DISCONNECT:
 				{
 					this.kickClient(message.id)
-					
+
 				}
 				break;
-			
+
 			case RelayMessage.Type.PING:
+				this.server.send(RelayMessage.serialize({ type: RelayMessage.Type.PING, direction: RelayMessage.Direction.RELAY_TO_SERVER }));
 				break;
 
 			default:
@@ -143,17 +144,17 @@ export class Relay {
 			type: RelayMessage.Type.ID,
 			id: ID
 		}
-		
+
 		ws.send(RelayMessage.serialize(msg));
-		
+
 		msg = {
 			direction: RelayMessage.Direction.RELAY_TO_SERVER,
 			type: RelayMessage.Type.CONNECT,
 			id: ID
 		};
-		
+
 		this.server.send(RelayMessage.serialize(msg));
-		
+
 		msg.id = 1;
 
 		ws.send(RelayMessage.serialize(msg));
@@ -162,7 +163,7 @@ export class Relay {
 	private kickClient(ID: number): void {
 		// TODO: Refactor into new function
 		let ws: WebSocket | undefined = this.peers.get(ID);
-		
+
 		if (ws == undefined) {
 			console.warn(`Relay "${this.code}": Cannot kick client "${ID}" They do not exist.`);
 			return;
@@ -191,7 +192,7 @@ export class Relay {
 	private onClientClose(ID: number): (wcode: number, reason: Buffer) => void {
 		return (code: number, reason: Buffer) => {
 			console.log(`Relay "${this.code}": Client "${ID}" disconnected`);
-			
+
 			let msg: RelayMessage.InformDisconnect = {
 				direction: RelayMessage.Direction.RELAY_TO_CLIENT,
 				type: RelayMessage.Type.DISCONNECT,
@@ -208,15 +209,20 @@ export class Relay {
 		return (data: Buffer | ArrayBuffer | Buffer[], isBinary: boolean) => {
 			if (data == undefined)
 				return;
-			
+
 			var message = RelayMessage.deserialize(data as Uint8Array, RelayMessage.Direction.CLIENT_TO_RELAY);
 
-			if (message.type != RelayMessage.Type.DATA) {
-				console.warn(`Relay "${this.code}": Unexpected message type from client: ${(data as Uint8Array)[0]}`);
-				return;
+			switch (message.type) {
+				case RelayMessage.Type.DATA:
+					this.forwardDataTo(message, RelayMessage.Direction.RELAY_TO_SERVER, ID);
+					return;
+				case RelayMessage.Type.PING:
+					this.server.send(RelayMessage.serialize({ type: RelayMessage.Type.PING, direction: RelayMessage.Direction.RELAY_TO_CLIENT }));
+					return;
+				default:
+					console.warn(`Relay "${this.code}": Unexpected message type from client: ${(data as Uint8Array)[0]}`);
+					return;
 			}
-
-			this.forwardDataTo(message, RelayMessage.Direction.RELAY_TO_SERVER, ID);
 		};
 	}
 
